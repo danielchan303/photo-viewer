@@ -7,6 +7,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import interact from 'interactjs';
+import { TouchService } from 'src/app/touch.service';
 
 @Component({
   selector: 'app-slide',
@@ -22,7 +23,10 @@ export class SlideComponent implements AfterViewInit {
     'background-color': 'yellow',
   };
 
-  constructor(private layerService: LayerService) {}
+  constructor(
+    private layerService: LayerService,
+    private touchService: TouchService
+  ) {}
 
   ngAfterViewInit(): void {
     let rotation = 0;
@@ -39,29 +43,29 @@ export class SlideComponent implements AfterViewInit {
     ];
     this.myStyle.transform = transform.join(' ');
 
+    this.touchService.register(this.box.nativeElement, {
+      onDown: (_) => {
+        this.layerService.moveToTop(this.image);
+      },
+      onOneFingerMove: (event) => {
+        console.log('onOneFingerMove', event);
+        position.x += event.dx;
+        position.y += event.dy;
+        transform[1] = `translate(${position.x}px, ${position.y}px)`;
+        this.myStyle.transform = transform.join(' ');
+      },
+      onTwoFingerMove(event) {
+        position.x += event.dx;
+        position.y += event.dy;
+        transform[1] = `translate(${position.x}px, ${position.y}px)`;
+      },
+    });
     const slide = interact(this.box.nativeElement, {
       maxPerElement: Infinity,
     });
-    slide.draggable({
-      enabled: true,
-      inertia: true,
-    });
+
     slide.gesturable({
       enabled: true,
-    });
-    // slide.on('dragstart', (event) => {
-    //   event.target.gesturable = false;
-    // });
-    slide.on('dragstart down', (event) => {
-      const interaction = event.interaction;
-      this.layerService.moveToTop(this.image);
-    });
-    slide.on('dragmove', (event) => {
-      position.x += event.dx;
-      position.y += event.dy;
-      transform[1] = `translate(${position.x}px, ${position.y}px)`;
-      this.myStyle.transform = transform.join(' ');
-      console.log('new tranform', event);
     });
 
     let centerShift = '';
@@ -88,9 +92,9 @@ export class SlideComponent implements AfterViewInit {
     let lastScale = '';
     slide.on('gesturemove', (event) => {
       // translate
-      position.x += event.dx;
-      position.y += event.dy;
-      transform[1] = `translate(${position.x}px, ${position.y}px)`;
+      // position.x += event.dx;
+      // position.y += event.dy;
+      // transform[1] = `translate(${position.x}px, ${position.y}px)`;
 
       // scale
       const newValue = initalScale * event.scale;
